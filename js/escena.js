@@ -1,5 +1,28 @@
+//Variables que guardan valores HEX para los colores
+const COLOR_PRIMARY = 0x4e342e;
+const COLOR_LIGHT = 0x7b5e57;
+const COLOR_DARK = 0x260e04;
+
+//Valor bool y int que se usan para conectar menu de compra con el saldo
+let x = 0;
+let valor = 0;
+
 class Escena extends Phaser.Scene {
+    constructor() {
+        super({
+            key: 'examples'
+        })
+    }
+
+
     preload(){
+
+        this.load.scenePlugin({
+            key: 'rexuiplugin',
+            url: 'https://raw.githubusercontent.com/rexrainbow/phaser3-rex-notes/master/dist/rexuiplugin.min.js',
+            sceneKey: 'rexUI'
+        });    
+
         this.load.image("background_floor","resource/suelo.png");
         this.load.image("background_register","resource/background_register.png");
         this.load.image("background_wall","resource/pared.png");
@@ -7,11 +30,109 @@ class Escena extends Phaser.Scene {
         this.load.image("estanteria","resource/estante1.png");
         this.load.image("letrero_estante","resource/letreroestante.png");
         this.load.image("fondo_saldo","resource/fondo_Saldo.png");
-        this.load.image('jugador','resource/prota.png');
     }
 
+
+
     create(){
+
         
+
+        var stringOption = false;
+        var options;
+        if (stringOption) {
+            options = ['Patatas', 'Galletas', 'Leche', 'Cereales','Manzanas','Peras','a','b','c'];
+        } else {
+            options = [
+                { text: 'Patatas 2 Euros', value: 2 },
+                { text: 'Galletas 50 Centimos', value: 0.5 },
+                { text: 'Leche 10 Euros', value: 10 },
+                { text: 'Cereales 3 Euros', value: 3 },
+                { text: 'Manzanas 1 Euro', value: 1 },
+                { text: 'Peras 2 Euros', value: 2 },
+                { text: 'a', value: 2 },
+                { text: 'b', value: 2 },
+                { text: 'c', value: 2 },
+            ]
+        }
+
+        var print = this.add.text(0, 0, '');
+        var dropDownList = this.rexUI.add.dropDownList({
+            x: 200, y: 50,
+
+            background: this.rexUI.add.roundRectangle(0, 0, 2, 2, 0, COLOR_PRIMARY).setDepth(10),
+            icon: this.rexUI.add.roundRectangle(0, 0, 20, 20, 10, COLOR_LIGHT).setDepth(10),
+            text: CreateTextObject(this, '-- MENU DE COMPRA --').setFixedSize(400, 0).setDepth(10),
+
+            space: {
+                left: 10,
+                right: 10,
+                top: 10,
+                bottom: 10,
+                icon: 10
+            },
+
+            options: options,
+
+            list: {
+                    createBackgroundCallback: function (scene) {
+                    return scene.rexUI.add.roundRectangle(0, 0, 2, 2, 0, COLOR_DARK).setDepth(10);
+                },
+                createButtonCallback: function (scene, option, index, options) {
+                    var text = (stringOption) ? option : option.text;
+                    var button = scene.rexUI.add.label({
+                        background: scene.rexUI.add.roundRectangle(0, 0, 2, 2, 0).setDepth(10),
+
+                        text: CreateTextObject(scene, text),
+
+                        space: {
+                            left: 10,
+                            right: 10,
+                            top: 10,
+                            bottom: 10,
+                            icon: 10
+                        }
+                    });
+                    button.value = (stringOption) ? undefined : option.value;
+
+                    return button;
+                },
+
+                // scope: dropDownList
+                onButtonClick: function (button, index, pointer, event) {
+
+                    this.value = button.value;
+                    print.text += `Select ${button.text}, value=${button.value}\n`;
+                },
+
+                // scope: dropDownList
+                onButtonOver: function (button, index, pointer, event) {
+                    button.getElement('background').setStrokeStyle(1, 0xffffff);
+                },
+
+                // scope: dropDownList
+                onButtonOut: function (button, index, pointer, event) {
+                    button.getElement('background').setStrokeStyle();
+                },
+              
+                 
+            },
+
+            setValueCallback: function (dropDownList, value, previousValue) {
+
+                console.log(-value);
+                x = 0 ;
+                valor = value;
+                //this.cambioSaldo(-value);
+            },
+            value: undefined
+
+        })
+            .layout();
+    
+
+
+
 
         //Creacion del Escenario
         this.imgSuelo = this.add.image(960,540,"background_floor");
@@ -72,12 +193,13 @@ class Escena extends Phaser.Scene {
         this.estanteria12.setDepth(4);
 
         this.imgMostrador.setDepth(6);
-        this.imgSuelo.setDepth(2);
+        this.imgSuelo.setDepth(1);
         this.imgSombra.setDepth(3);
         this.imgPared.setDepth(1);
+        
 
         //Creacion del saldo
-       this.saldo = 0;
+       this.saldo = 200;
        this.fondoSaldo = this.add.image(1350,20,"fondo_saldo").setScale(2);
        this.saldoValue = this.add.text(1350,0,'0',{ fontSize:'32px',fill:'#000'});
        this.saldoText = this.add.text(1302,30,'Saldo',{ fontSize:'32px',fill:'#000'});
@@ -88,18 +210,26 @@ class Escena extends Phaser.Scene {
     }
 
     update(){
-
         this.saldoText.setText("Saldo: " + this.saldo);
-    }
+        //Esta llamada solo la utilizaremos para el menu de compra su uso es raro usando un bolean y no creo que se adapte al añadirSaldo 
+        if( x == 0){
+                this.cambioSaldo(-valor);
+            x = 1
+        }
 
+    }
     cambioSaldo(dinero){
         if (this.saldo <= 0){
             return;
         }else{
             this.saldo += dinero;
         }
-
-
     }
 
+}
+
+
+
+var CreateTextObject = function (scene, text) {
+    return scene.add.text(0, 0, text, { fontSize: 20 }).setDepth(10)
 }
